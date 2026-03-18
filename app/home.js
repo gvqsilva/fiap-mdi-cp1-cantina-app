@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import { useCart } from './cart-context';
 
 const CATEGORIAS = ['Tudo', 'Salgado', 'Doce', 'Bebidas', 'Combos'];
 const IMAGEM_PERFIL = require('../assets/icon.png');
@@ -20,6 +21,7 @@ const PRODUTOS = [
 
 export default function Home() {
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('Tudo');
+  const { adicionarItem } = useCart();
 
   const produtosFiltrados = useMemo(() => {
     if (categoriaSelecionada === 'Tudo') {
@@ -85,7 +87,11 @@ export default function Home() {
               <Text style={styles.valorProduto}>{produto.valor}</Text>
             </View>
 
-            <TouchableOpacity style={styles.botaoAdicionar} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.botaoAdicionar}
+              activeOpacity={0.8}
+              onPress={() => adicionarItem(produto)}
+            >
               <Text style={styles.textoAdicionar}>+</Text>
             </TouchableOpacity>
           </View>
