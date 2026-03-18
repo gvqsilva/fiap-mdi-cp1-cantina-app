@@ -36,7 +36,7 @@ export default function Perfil() {
 
           <View style={styles.infoAluno}>
             <Text style={styles.textoAluno}>Olá, Gabriel</Text>
-            <Text style={styles.textoTurma}>Turma</Text>
+            <Text style={styles.textoTurma}>3ESPG</Text>
           </View>
         </View>
 

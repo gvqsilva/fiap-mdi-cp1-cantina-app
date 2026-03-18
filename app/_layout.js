@@ -1,8 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, LogBox, StyleSheet, Text, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CartProvider, useCart } from './cart-context';
+
+if (__DEV__) {
+  LogBox.ignoreLogs([
+    "Call to function 'ExpoKeepAwake.activate' has been rejected.",
+    'The current activity is no longer available',
+  ]);
+}
 
 export default function Layout() {
   return (

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Animated, 
 import { useRouter } from 'expo-router';
 import { useCart } from './cart-context';
 
-const IMAGEM_PRODUTO = require('../assets/splash-icon.png');
+const IMAGEM_PADRAO = require('../assets/splash-icon.png');
 
 export default function Carrinho() {
   const router = useRouter();
@@ -100,7 +100,7 @@ export default function Carrinho() {
           {itens.map((item) => (
             <View key={item.id} style={styles.cardItem}>
               <View style={styles.imagemWrapper}>
-                <Image source={IMAGEM_PRODUTO} style={styles.imagemProduto} resizeMode="cover" />
+                <Image source={item.imagem || IMAGEM_PADRAO} style={styles.imagemProduto} resizeMode="cover" />
               </View>
 
               <View style={styles.infoItem}>

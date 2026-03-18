@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'rea
 import { useRouter } from 'expo-router';
 import { useCart } from './cart-context';
 
-const IMAGEM_PRODUTO = require('../assets/splash-icon.png');
-const OPCOES_PAGAMENTO = ['Debito', 'Credito', 'Vale Refeicao', 'Pix'];
+const IMAGEM_PADRAO = require('../assets/splash-icon.png');
+const OPCOES_PAGAMENTO = ['Débito', 'Crédito', 'Vale Refeição', 'Pix'];
 
 function valorParaNumero(valor) {
   if (typeof valor !== 'string') {
@@ -48,7 +48,7 @@ export default function Pagamento() {
             {itens.map((item) => (
               <View key={item.id} style={styles.itemProduto}>
                 <View style={styles.imagemItemWrap}>
-                  <Image source={IMAGEM_PRODUTO} style={styles.imagemItem} resizeMode="cover" />
+                  <Image source={item.imagem || IMAGEM_PADRAO} style={styles.imagemItem} resizeMode="cover" />
                 </View>
 
                 <View style={styles.infoProduto}>
