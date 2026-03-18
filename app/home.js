@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Animated } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useCart } from './cart-context';
 
 const CATEGORIAS = ['Tudo', 'Salgado', 'Doce', 'Bebidas', 'Combos'];
@@ -20,6 +21,7 @@ const PRODUTOS = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('Tudo');
   const [itensAdicionadosVisual, setItensAdicionadosVisual] = useState({});
   const [mensagemToast, setMensagemToast] = useState('');
@@ -110,7 +112,7 @@ export default function Home() {
           <Text style={styles.subtitulo}>FIAP x Kitchenette</Text>
         </View>
 
-        <TouchableOpacity style={styles.botaoPerfil} activeOpacity={0.85}>
+        <TouchableOpacity style={styles.botaoPerfil} activeOpacity={0.85} onPress={() => router.push('/perfil')}>
           <Image source={IMAGEM_PERFIL} style={styles.imagemPerfil} resizeMode="cover" />
         </TouchableOpacity>
       </View>
