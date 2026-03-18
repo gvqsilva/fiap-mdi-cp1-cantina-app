@@ -48,10 +48,9 @@ Motivo:
 
 Preencher com os dados oficiais do grupo:
 
-1. Nome completo - RM
-2. Nome completo - RM
-3. Nome completo - RM
-4. Nome completo - RM
+1. Augusto Douglas Mendonça - RM: 558371
+2. Gabriel Vasquez - RM: 557056
+3. Gustavo Oliveira - RM: 559163
 
 <a id="como-rodar-o-projeto"></a>
 
