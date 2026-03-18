@@ -25,6 +25,7 @@ export default function Pagamento() {
   const router = useRouter();
   const { itens, totalItens } = useCart();
   const [opcaoSelecionada, setOpcaoSelecionada] = useState(null);
+  const podeFinalizar = Boolean(opcaoSelecionada) && totalItens > 0;
 
   const subtotal = itens.reduce((acumulado, item) => {
     return acumulado + valorParaNumero(item.valor) * item.quantidade;
@@ -102,9 +103,18 @@ export default function Pagamento() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.botaoPrincipal, !opcaoSelecionada && styles.botaoPrincipalDesabilitado]}
+          style={[styles.botaoPrincipal, !podeFinalizar && styles.botaoPrincipalDesabilitado]}
           activeOpacity={0.85}
-          disabled={!opcaoSelecionada}
+          disabled={!podeFinalizar}
+          onPress={() =>
+            router.push({
+              pathname: '/processando-pagamento',
+              params: {
+                formaPagamento: opcaoSelecionada,
+                flowId: String(Date.now()),
+              },
+            })
+          }
         >
           <Text style={styles.textoBotaoPrincipal}>Finalizar pagamento</Text>
         </TouchableOpacity>

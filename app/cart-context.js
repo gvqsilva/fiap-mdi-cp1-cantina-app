@@ -1,9 +1,29 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 const CartContext = createContext(null);
+const STATUS_EM_PREPARACAO = 'Em preparação';
+const STATUS_PRONTO_RETIRADA = 'Pronto para retirada';
+const STATUS_CONCLUIDO = 'Concluído';
+
+function valorParaNumero(valor) {
+  if (typeof valor !== 'string') {
+    return 0;
+  }
+
+  const apenasNumeros = valor.replace(/[^\d,]/g, '').replace(',', '.');
+  const numero = Number(apenasNumeros);
+
+  if (Number.isNaN(numero)) {
+    return 0;
+  }
+
+  return numero;
+}
 
 export function CartProvider({ children }) {
   const [itens, setItens] = useState([]);
+  const [historicoPedidos, setHistoricoPedidos] = useState([]);
+  const timersRef = useRef([]);
 
   const adicionarItem = useCallback((produto) => {
     setItens((itensAtuais) => {
@@ -58,6 +78,64 @@ export function CartProvider({ children }) {
     );
   }, []);
 
+  const registrarPedido = useCallback((pedidoId, itensPedido, tempoEstimadoMinutos) => {
+    if (!Array.isArray(itensPedido) || itensPedido.length === 0) {
+      return;
+    }
+
+    const totalItensPedido = itensPedido.reduce((acumulado, item) => acumulado + item.quantidade, 0);
+    const totalValorPedido = itensPedido.reduce(
+      (acumulado, item) => acumulado + valorParaNumero(item.valor) * item.quantidade,
+      0
+    );
+
+    const minutosValidados = Math.max(1, Number(tempoEstimadoMinutos || 0));
+
+    setHistoricoPedidos((pedidosAtuais) => [
+      {
+        id: pedidoId,
+        data: new Date().toISOString(),
+        totalItens: totalItensPedido,
+        totalValor: totalValorPedido,
+        status: STATUS_EM_PREPARACAO,
+      },
+      ...pedidosAtuais,
+    ]);
+
+    const timeoutPronto = setTimeout(() => {
+      setHistoricoPedidos((pedidosAtuais) =>
+        pedidosAtuais.map((pedido) => {
+          if (pedido.id !== pedidoId) {
+            return pedido;
+          }
+
+          return { ...pedido, status: STATUS_PRONTO_RETIRADA };
+        })
+      );
+    }, minutosValidados * 60 * 1000);
+
+    const timeoutConcluido = setTimeout(() => {
+      setHistoricoPedidos((pedidosAtuais) =>
+        pedidosAtuais.map((pedido) => {
+          if (pedido.id !== pedidoId) {
+            return pedido;
+          }
+
+          return { ...pedido, status: STATUS_CONCLUIDO };
+        })
+      );
+    }, minutosValidados * 60 * 1000 + 30 * 1000);
+
+    timersRef.current.push(timeoutPronto, timeoutConcluido);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach((timerId) => clearTimeout(timerId));
+      timersRef.current = [];
+    };
+  }, []);
+
   const totalItens = useMemo(
     () => itens.reduce((acumulado, item) => acumulado + item.quantidade, 0),
     [itens]
@@ -66,19 +144,23 @@ export function CartProvider({ children }) {
   const valor = useMemo(
     () => ({
       itens,
+      historicoPedidos,
       totalItens,
       adicionarItem,
       limparCarrinho,
       aumentarQuantidade,
       diminuirQuantidade,
+      registrarPedido,
     }),
     [
       itens,
+      historicoPedidos,
       totalItens,
       adicionarItem,
       limparCarrinho,
       aumentarQuantidade,
       diminuirQuantidade,
+      registrarPedido,
     ]
   );
 
