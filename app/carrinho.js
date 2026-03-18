@@ -1,11 +1,13 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-export default function Sobre() {
+
+
+export default function Carrinho() {
   const router = useRouter();
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>ℹ️ Sobre</Text>
-      <Text style={styles.descricao}>Esse app foi feito na FIAP! 🚀</Text>
+      <Text style={styles.titulo}>🛒 Carrinho</Text>
+      <Text style={styles.descricao}>Seu carrinho de compras está aqui!</Text>
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.voltar}>← Voltar</Text>
       </TouchableOpacity>

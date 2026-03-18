@@ -4,17 +4,24 @@ export default function Layout() {
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: '#E83D84' }}>
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="sobre"
+        name="carrinho"
         options={{
-          title: 'Sobre',
-          tabBarIcon: ({ color }) => <Ionicons name="information-circle" size={24} color={color} />,
+          title: 'Carrinho',
+          tabBarIcon: ({ color }) => <Ionicons name="cart" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="perfil"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
         }}
       />
     </Tabs>

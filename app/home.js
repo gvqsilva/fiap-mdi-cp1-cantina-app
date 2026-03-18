@@ -5,8 +5,8 @@ export default function Home() {
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>🏠 Home</Text>
-      <TouchableOpacity style={styles.botao} onPress={() => router.push('/sobre')}>
-        <Text style={styles.botaoTexto}>Ir para Sobre</Text>
+      <TouchableOpacity style={styles.botao} onPress={() => router.push('/carrinho')}>
+        <Text style={styles.botaoTexto}>Ir para Carrinho</Text>
       </TouchableOpacity>
     </View>
   );
