@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Animated } from 'react-native';
 import { useCart } from './cart-context';
 
 const CATEGORIAS = ['Tudo', 'Salgado', 'Doce', 'Bebidas', 'Combos'];
@@ -21,7 +21,78 @@ const PRODUTOS = [
 
 export default function Home() {
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('Tudo');
+  const [itensAdicionadosVisual, setItensAdicionadosVisual] = useState({});
+  const [mensagemToast, setMensagemToast] = useState('');
+  const timersFeedbackRef = useRef({});
+  const timerToastRef = useRef(null);
+  const animacaoToast = useRef(new Animated.Value(0)).current;
   const { adicionarItem } = useCart();
+
+  const marcarItemAdicionado = useCallback((produtoId) => {
+    setItensAdicionadosVisual((estadoAtual) => ({ ...estadoAtual, [produtoId]: true }));
+
+    if (timersFeedbackRef.current[produtoId]) {
+      clearTimeout(timersFeedbackRef.current[produtoId]);
+    }
+
+    timersFeedbackRef.current[produtoId] = setTimeout(() => {
+      setItensAdicionadosVisual((estadoAtual) => {
+        const proximoEstado = { ...estadoAtual };
+        delete proximoEstado[produtoId];
+        return proximoEstado;
+      });
+
+      delete timersFeedbackRef.current[produtoId];
+    }, 900);
+  }, []);
+
+  const exibirToast = useCallback(
+    (nomeProduto) => {
+      setMensagemToast(`${nomeProduto} adicionado ao carrinho`);
+
+      if (timerToastRef.current) {
+        clearTimeout(timerToastRef.current);
+      }
+
+      Animated.timing(animacaoToast, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+
+      timerToastRef.current = setTimeout(() => {
+        Animated.timing(animacaoToast, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      }, 1300);
+    },
+    [animacaoToast]
+  );
+
+  useEffect(() => {
+    return () => {
+      Object.values(timersFeedbackRef.current).forEach((timerId) => clearTimeout(timerId));
+      timersFeedbackRef.current = {};
+
+      if (timerToastRef.current) {
+        clearTimeout(timerToastRef.current);
+      }
+    };
+  }, []);
+
+  const estiloToastAnimado = {
+    opacity: animacaoToast,
+    transform: [
+      {
+        translateY: animacaoToast.interpolate({
+          inputRange: [0, 1],
+          outputRange: [16, 0],
+        }),
+      },
+    ],
+  };
 
   const produtosFiltrados = useMemo(() => {
     if (categoriaSelecionada === 'Tudo') {
@@ -75,8 +146,11 @@ export default function Home() {
       </ScrollView>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listaProdutos}>
-        {produtosFiltrados.map((produto) => (
-          <View key={produto.id} style={styles.cardProduto}>
+        {produtosFiltrados.map((produto) => {
+          const adicionadoAgora = Boolean(itensAdicionadosVisual[produto.id]);
+
+          return (
+          <View key={produto.id} style={[styles.cardProduto, adicionadoAgora && styles.cardProdutoAtivo]}>
             <View style={styles.imagemPlaceholder}>
               <Image source={IMAGEM_PRODUTO} style={styles.imagemProduto} resizeMode="cover" />
             </View>
@@ -85,18 +159,33 @@ export default function Home() {
               <Text style={styles.nomeProduto}>{produto.nome}</Text>
               <Text style={styles.descricaoProduto}>{produto.descricao}</Text>
               <Text style={styles.valorProduto}>{produto.valor}</Text>
+              {adicionadoAgora && <Text style={styles.feedbackItem}>Adicionado ao carrinho</Text>}
             </View>
 
             <TouchableOpacity
-              style={styles.botaoAdicionar}
+              style={[styles.botaoAdicionar, adicionadoAgora && styles.botaoAdicionarAtivo]}
               activeOpacity={0.8}
-              onPress={() => adicionarItem(produto)}
+              onPress={() => {
+                adicionarItem(produto);
+                marcarItemAdicionado(produto.id);
+                exibirToast(produto.nome);
+              }}
             >
-              <Text style={styles.textoAdicionar}>+</Text>
+              <Text style={styles.textoAdicionar}>{adicionadoAgora ? '✓' : '+'}</Text>
             </TouchableOpacity>
           </View>
-        ))}
+          );
+        })}
       </ScrollView>
+
+      <Animated.View pointerEvents="none" style={[styles.toastContainer, estiloToastAnimado]}>
+        <View style={styles.toastLinha}>
+          <View style={styles.toastIconeWrap}>
+            <Text style={styles.toastIcone}>✓</Text>
+          </View>
+          <Text style={styles.toastTexto}>{mensagemToast}</Text>
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -206,6 +295,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  cardProdutoAtivo: {
+    borderColor: '#4B8941',
+    backgroundColor: '#E6F3E3',
+  },
   imagemPlaceholder: {
     width: 76,
     height: 76,
@@ -243,6 +336,12 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '700',
   },
+  feedbackItem: {
+    marginTop: 3,
+    color: '#2F7C47',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   botaoAdicionar: {
     width: 42,
     height: 42,
@@ -253,10 +352,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  botaoAdicionarAtivo: {
+    backgroundColor: '#2F7C47',
+    borderColor: '#2B6D3F',
+  },
   textoAdicionar: {
     color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
     marginTop: -1,
+  },
+  toastContainer: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 22,
+    minHeight: 50,
+    borderRadius: 16,
+    backgroundColor: '#1F5C3A',
+    borderWidth: 1,
+    borderColor: '#2B7A4C',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    zIndex: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  toastLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  toastIconeWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#2D8755',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 9,
+  },
+  toastIcone: {
+    color: '#F2FFF6',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  toastTexto: {
+    color: '#F6FFF8',
+    fontSize: 14,
+    fontWeight: '700',
+    flex: 1,
   },
 });

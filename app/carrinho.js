@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Animated, Vibration } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCart } from './cart-context';
 
@@ -7,7 +8,71 @@ const IMAGEM_PRODUTO = require('../assets/splash-icon.png');
 export default function Carrinho() {
   const router = useRouter();
   const { itens, aumentarQuantidade, diminuirQuantidade } = useCart();
+  const [mensagemFeedback, setMensagemFeedback] = useState('');
+  const animacaoFeedback = useRef(new Animated.Value(0)).current;
+  const timerFeedbackRef = useRef(null);
+  const itensAnterioresRef = useRef(itens);
   const carrinhoVazio = itens.length === 0;
+
+  const exibirFeedbackRemocao = useCallback(
+    (mensagem) => {
+      setMensagemFeedback(mensagem);
+      Vibration.vibrate(35);
+
+      if (timerFeedbackRef.current) {
+        clearTimeout(timerFeedbackRef.current);
+      }
+
+      Animated.timing(animacaoFeedback, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+
+      timerFeedbackRef.current = setTimeout(() => {
+        Animated.timing(animacaoFeedback, {
+          toValue: 0,
+          duration: 220,
+          useNativeDriver: true,
+        }).start();
+      }, 1400);
+    },
+    [animacaoFeedback]
+  );
+
+  useEffect(() => {
+    const itensAnteriores = itensAnterioresRef.current;
+    const itensRemovidos = itensAnteriores.filter(
+      (itemAnterior) => !itens.some((itemAtual) => itemAtual.id === itemAnterior.id)
+    );
+
+    if (itensRemovidos.length > 0) {
+      const nomeItem = itensRemovidos[0].nome || 'Item';
+      exibirFeedbackRemocao(`${nomeItem} removido do carrinho`);
+    }
+
+    itensAnterioresRef.current = itens;
+  }, [itens, exibirFeedbackRemocao]);
+
+  useEffect(() => {
+    return () => {
+      if (timerFeedbackRef.current) {
+        clearTimeout(timerFeedbackRef.current);
+      }
+    };
+  }, []);
+
+  const estiloFeedbackAnimado = {
+    opacity: animacaoFeedback,
+    transform: [
+      {
+        translateY: animacaoFeedback.interpolate({
+          inputRange: [0, 1],
+          outputRange: [-14, 0],
+        }),
+      },
+    ],
+  };
 
   return (
     <View style={styles.container}>
@@ -15,6 +80,15 @@ export default function Carrinho() {
         <Text style={styles.titulo}>Carrinho</Text>
         <Text style={styles.subtitulo}>Verifique seu pedido antes de finalizar a compra</Text>
       </View>
+
+      <Animated.View pointerEvents="none" style={[styles.feedbackRemocao, estiloFeedbackAnimado]}>
+        <View style={styles.feedbackLinha}>
+          <View style={styles.feedbackIconeWrap}>
+            <Text style={styles.feedbackIcone}>!</Text>
+          </View>
+          <Text style={styles.feedbackRemocaoTexto}>{mensagemFeedback}</Text>
+        </View>
+      </Animated.View>
 
       {carrinhoVazio ? (
         <View style={styles.estadoVazio}>
@@ -100,9 +174,54 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontWeight: '500',
   },
+  feedbackRemocao: {
+    position: 'absolute',
+    top: 96,
+    left: 14,
+    right: 14,
+    minHeight: 48,
+    borderRadius: 16,
+    backgroundColor: '#7A1D32',
+    borderWidth: 1,
+    borderColor: '#B03A5A',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    zIndex: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  feedbackLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  feedbackIconeWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#B03A5A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 9,
+  },
+  feedbackIcone: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  feedbackRemocaoTexto: {
+    color: '#FFF2F6',
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: '700',
+    flex: 1,
+  },
   listaItens: {
     paddingHorizontal: 8,
-    paddingTop: 12,
+    paddingTop: 20,
     paddingBottom: 10,
     gap: 10,
   },

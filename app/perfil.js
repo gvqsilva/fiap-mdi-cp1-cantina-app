@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useCart } from './cart-context';
 
 function formatarData(dataIso) {
@@ -20,7 +21,12 @@ function formatarValor(valor) {
 
 export default function Perfil() {
   const { historicoPedidos } = useCart();
+  const [pedidoExpandido, setPedidoExpandido] = useState(null);
   const semHistorico = historicoPedidos.length === 0;
+
+  const alternarExpansaoPedido = (chavePedido) => {
+    setPedidoExpandido((atual) => (atual === chavePedido ? null : chavePedido));
+  };
 
   return (
     <View style={styles.container}>
@@ -47,19 +53,30 @@ export default function Perfil() {
           {historicoPedidos.map((pedido) => {
             const statusConcluido = pedido.status === 'Concluído';
             const statusRetirada = pedido.status === 'Pronto para retirada';
+            const chavePedido = `${pedido.id}-${pedido.data}`;
+            const estaExpandido = pedidoExpandido === chavePedido;
+            const itensPedido = Array.isArray(pedido.itens) ? pedido.itens : [];
 
             return (
-              <View key={`${pedido.id}-${pedido.data}`} style={styles.cardPedido}>
+              <TouchableOpacity
+                key={chavePedido}
+                style={styles.cardPedido}
+                activeOpacity={0.9}
+                onPress={() => alternarExpansaoPedido(chavePedido)}
+              >
                 <View style={styles.linhaCabecalhoCard}>
                   <Text style={styles.idPedido}>{`Pedido ${pedido.id}`}</Text>
-                  <View
-                    style={[
-                      styles.badgeStatus,
-                      statusConcluido && styles.badgeConcluido,
-                      statusRetirada && styles.badgeRetirada,
-                    ]}
-                  >
-                    <Text style={styles.textoStatus}>{pedido.status}</Text>
+                  <View style={styles.cabecalhoAcoes}>
+                    <View
+                      style={[
+                        styles.badgeStatus,
+                        statusConcluido && styles.badgeConcluido,
+                        statusRetirada && styles.badgeRetirada,
+                      ]}
+                    >
+                      <Text style={styles.textoStatus}>{pedido.status}</Text>
+                    </View>
+                    <Text style={styles.iconeExpandir}>{estaExpandido ? '▴' : '▾'}</Text>
                   </View>
                 </View>
 
@@ -77,7 +94,34 @@ export default function Perfil() {
                   <Text style={styles.label}>Valor</Text>
                   <Text style={styles.valor}>{formatarValor(pedido.totalValor)}</Text>
                 </View>
-              </View>
+
+                {estaExpandido && (
+                  <View style={styles.secaoDetalhes}>
+                    <Text style={styles.tituloDetalhes}>Detalhes do pedido</Text>
+
+                    {itensPedido.map((item) => (
+                      <View key={`${chavePedido}-${item.id}`} style={styles.itemDetalhe}>
+                        <Text style={styles.nomeDetalheItem}>{item.nome}</Text>
+
+                        <View style={styles.linhaDetalheInfo}>
+                          <Text style={styles.labelDetalhe}>Valor unit.</Text>
+                          <Text style={styles.valorDetalhe}>{item.valor}</Text>
+                        </View>
+
+                        <View style={styles.linhaDetalheInfo}>
+                          <Text style={styles.labelDetalhe}>Qtd</Text>
+                          <Text style={styles.valorDetalhe}>{item.quantidade}</Text>
+                        </View>
+
+                        <View style={styles.linhaDetalheInfo}>
+                          <Text style={styles.labelDetalhe}>Subtotal</Text>
+                          <Text style={styles.valorDetalhe}>{formatarValor(item.subtotal || 0)}</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </TouchableOpacity>
             );
           })}
         </ScrollView>
@@ -171,6 +215,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 8,
   },
+  cabecalhoAcoes: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   idPedido: {
     color: '#1E1E1E',
     fontSize: 18,
@@ -196,6 +245,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  iconeExpandir: {
+    color: '#6A2A41',
+    fontSize: 18,
+    fontWeight: '700',
+    minWidth: 14,
+    textAlign: 'center',
+  },
   linhaInfo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -210,6 +266,46 @@ const styles = StyleSheet.create({
   valor: {
     color: '#1E1E1E',
     fontSize: 15,
+    fontWeight: '700',
+  },
+  secaoDetalhes: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#B9B9B9',
+    paddingTop: 10,
+    gap: 8,
+  },
+  tituloDetalhes: {
+    color: '#303030',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  itemDetalhe: {
+    backgroundColor: '#D5D5D5',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  nomeDetalheItem: {
+    color: '#242424',
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 5,
+  },
+  linhaDetalheInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+  },
+  labelDetalhe: {
+    color: '#4B4B4B',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  valorDetalhe: {
+    color: '#222222',
+    fontSize: 13,
     fontWeight: '700',
   },
 });

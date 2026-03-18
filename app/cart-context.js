@@ -24,6 +24,8 @@ export function CartProvider({ children }) {
   const [itens, setItens] = useState([]);
   const [historicoPedidos, setHistoricoPedidos] = useState([]);
   const timersRef = useRef([]);
+  const timerAvisoRef = useRef(null);
+  const [avisoPedidoPronto, setAvisoPedidoPronto] = useState(null);
 
   const adicionarItem = useCallback((produto) => {
     setItens((itensAtuais) => {
@@ -83,6 +85,14 @@ export function CartProvider({ children }) {
       return;
     }
 
+    const itensDetalhados = itensPedido.map((item) => ({
+      id: item.id,
+      nome: item.nome,
+      valor: item.valor,
+      quantidade: item.quantidade,
+      subtotal: valorParaNumero(item.valor) * item.quantidade,
+    }));
+
     const totalItensPedido = itensPedido.reduce((acumulado, item) => acumulado + item.quantidade, 0);
     const totalValorPedido = itensPedido.reduce(
       (acumulado, item) => acumulado + valorParaNumero(item.valor) * item.quantidade,
@@ -98,6 +108,7 @@ export function CartProvider({ children }) {
         totalItens: totalItensPedido,
         totalValor: totalValorPedido,
         status: STATUS_EM_PREPARACAO,
+        itens: itensDetalhados,
       },
       ...pedidosAtuais,
     ]);
@@ -112,6 +123,19 @@ export function CartProvider({ children }) {
           return { ...pedido, status: STATUS_PRONTO_RETIRADA };
         })
       );
+
+      setAvisoPedidoPronto({
+        id: pedidoId,
+        mensagem: `Pedido ${pedidoId} pronto para retirada`,
+      });
+
+      if (timerAvisoRef.current) {
+        clearTimeout(timerAvisoRef.current);
+      }
+
+      timerAvisoRef.current = setTimeout(() => {
+        setAvisoPedidoPronto(null);
+      }, 3500);
     }, minutosValidados * 60 * 1000);
 
     const timeoutConcluido = setTimeout(() => {
@@ -133,6 +157,10 @@ export function CartProvider({ children }) {
     return () => {
       timersRef.current.forEach((timerId) => clearTimeout(timerId));
       timersRef.current = [];
+
+      if (timerAvisoRef.current) {
+        clearTimeout(timerAvisoRef.current);
+      }
     };
   }, []);
 
@@ -145,6 +173,7 @@ export function CartProvider({ children }) {
     () => ({
       itens,
       historicoPedidos,
+      avisoPedidoPronto,
       totalItens,
       adicionarItem,
       limparCarrinho,
@@ -155,6 +184,7 @@ export function CartProvider({ children }) {
     [
       itens,
       historicoPedidos,
+      avisoPedidoPronto,
       totalItens,
       adicionarItem,
       limparCarrinho,
