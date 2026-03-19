@@ -66,7 +66,7 @@ Preencher com os dados oficiais do grupo:
 1. Clonar o repositório:
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
+git clone https://github.com/gvqsilva/fiap-mdi-cp1-cantina-app
 cd cantina-app
 ```
 
@@ -120,20 +120,6 @@ Checklist de entrega:
 
 - [ ] Print do Perfil com histórico
 <img width="150" alt="image" src="https://github.com/user-attachments/assets/e18479ee-5551-4476-8564-7a624f22efa9" />
-
-
-### GIF ou vídeo do fluxo principal
-Adicionar link do GIF/vídeo mostrando o fluxo completo:
-1. Selecionar itens no cardápio.
-2. Ajustar carrinho.
-3. Finalizar pagamento.
-4. Ver tela de pedido.
-5. Ver aviso de pedido pronto.
-6. Consultar histórico no perfil.
-
-Links:
-- GIF: **[inserir link]**
-- Vídeo (YouTube/Drive): **[inserir link]**
 
 <a id="decisoes-tecnicas"></a>
 
