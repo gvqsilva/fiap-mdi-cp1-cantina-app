@@ -175,23 +175,6 @@ npx expo start --clear
 
 <a id="demonstracao"></a>
 
-## Demonstração
-
-### Prints das telas (mínimo: uma por tela)
-Recomendação: criar a pasta `assets/screenshots` e salvar os prints com nomes padronizados.
-
-Telas implementadas:
-- ✅ Home (com hero card)
-- ✅ Escolher Tipo (Aluno/Professor)
-- ✅ Cadastro (com campos dinâmicos)
-- ✅ Login
-- ✅ Cardápio (com hero de categoria)
-- ✅ Carrinho
-- ✅ Pagamento (com fidelidade)
-- ✅ Processando Pagamento
-- ✅ Pedido (confirmação)
-- ✅ Perfil (com filtros, busca e timeline)
-
 ### Dados de Teste
 
 **Exemplo - Aluno**:
@@ -205,30 +188,9 @@ Telas implementadas:
 - Senha: 123456
 - Código Professor: pf1234
 
-### GIF ou vídeo do fluxo principal
-Links para adição:
-- GIF: **[inserir link]**
+### Vídeo do fluxo principal
+
 - Vídeo (YouTube/Drive): **[inserir link]**
-=======
-Checklist de entrega:
-- [ ] Print da Home
-<img width="150" alt="image" src="https://github.com/user-attachments/assets/ae41b8b3-5d6c-491f-b6bb-ed5f3bc19f6c" />
-
-- [ ] Print do Carrinho
-<img width="150" alt="image" src="https://github.com/user-attachments/assets/a7a65f4a-0701-4317-8539-3e9857399058" />
-
-- [ ] Print do Pagamento
-<img width="150" alt="image" src="https://github.com/user-attachments/assets/9730d960-e1ba-419a-b7dd-89a7040ff9af" />
-
-- [ ] Print de Processamento
-<img width="150" alt="image" src="https://github.com/user-attachments/assets/d87a8851-cbb1-454b-8ae5-14bda90e5fcf" />
-
-- [ ] Print da tela de Pedido
-<img width="150" alt="image" src="https://github.com/user-attachments/assets/c0a92bf4-4637-476c-b334-5e9961d464dd" />
-
-- [ ] Print do Perfil com histórico
-<img width="150" alt="image" src="https://github.com/user-attachments/assets/e18479ee-5551-4476-8564-7a624f22efa9" />
->>>>>>> 25b308c5e209030c185f42e574dd72b49ab34cd6
 
 <a id="decisoes-tecnicas"></a>
 
