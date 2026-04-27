@@ -1,5 +1,10 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import ThemedHeader from '../components/ThemedHeader';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenBackground from '../components/ScreenBackground';
+import FadeInView from '../components/FadeInView';
+import { theme } from './theme';
 
 export default function Pedido() {
   const router = useRouter();
@@ -10,12 +15,11 @@ export default function Pedido() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topo}>
-        <Text style={styles.tituloTopo}>{`Pedido ${idPedido}`}</Text>
-      </View>
+      <ScreenBackground />
+      <ThemedHeader title={`Pedido ${idPedido}`} subtitle="Acompanhe o preparo em tempo real" />
 
       <View style={styles.conteudo}>
-        <View style={styles.blocoCentral}>
+        <FadeInView style={styles.blocoCentral}>
           <View style={styles.cardPedido}>
             <View style={styles.badgeStatus}>
               <Text style={styles.textoBadge}>Em preparo</Text>
@@ -30,25 +34,13 @@ export default function Pedido() {
               <Text style={styles.textoTempo}>{`${tempoPedido} MIN`}</Text>
             </View>
 
-            <TouchableOpacity
-              style={styles.botaoDetalhes}
-              activeOpacity={0.85}
-              onPress={() => router.push('/perfil')}
-            >
-              <Text style={styles.textoBotaoDetalhes}>Ver histórico</Text>
-              <View style={[styles.setaWrap, styles.setaAbsoluta]}>
-                <Text style={styles.textoSeta}>›</Text>
-              </View>
-            </TouchableOpacity>
+            <PrimaryButton title="Ver histórico" variant="secondary" onPress={() => router.push('/perfil')} />
           </View>
 
-          <TouchableOpacity style={styles.botaoHome} activeOpacity={0.85} onPress={() => router.replace('/home')}>
-            <Text style={styles.textoBotaoHome}>Voltar para Home</Text>
-            <View style={[styles.setaWrap, styles.setaAbsoluta]}>
-              <Text style={styles.textoSeta}>›</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+          <FadeInView delay={100}>
+            <PrimaryButton title="Voltar para Home" onPress={() => router.replace('/home')} style={styles.botaoHome} />
+          </FadeInView>
+        </FadeInView>
       </View>
     </View>
   );
@@ -57,29 +49,11 @@ export default function Pedido() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#9D9D9D',
-  },
-  topo: {
-    backgroundColor: '#AD395A',
-    borderBottomLeftRadius: 26,
-    borderBottomRightRadius: 26,
-    minHeight: 102,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tituloTopo: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '700',
-    lineHeight: 32,
-    textAlign: 'center',
+    backgroundColor: theme.colors.background,
   },
   conteudo: {
     flex: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     justifyContent: 'center',
     paddingBottom: 20,
   },
@@ -89,38 +63,39 @@ const styles = StyleSheet.create({
   cardPedido: {
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#9A9A9A',
-    backgroundColor: '#E0E0E0',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     paddingTop: 16,
     paddingHorizontal: 14,
     paddingBottom: 16,
     alignItems: 'center',
+    ...theme.shadow,
   },
   badgeStatus: {
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#E9D3DB',
+    backgroundColor: '#2A1017',
     borderWidth: 1,
-    borderColor: '#C48BA0',
+    borderColor: theme.colors.accent,
     paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   textoBadge: {
-    color: '#7A2B47',
+    color: theme.colors.accentSoft,
     fontSize: 14,
     fontWeight: '700',
   },
   textoInfo: {
-    color: '#303030',
+    color: theme.colors.text,
     fontSize: 17,
     lineHeight: 22,
     textAlign: 'center',
     marginBottom: 2,
   },
   textoKitchenette: {
-    color: '#3F8D45',
+    color: theme.colors.accentSoft,
     fontWeight: '700',
   },
   boxTempo: {
@@ -128,12 +103,13 @@ const styles = StyleSheet.create({
     width: '90%',
     minHeight: 116,
     borderRadius: 18,
-    backgroundColor: '#B03A5A',
+    backgroundColor: theme.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#9A2E4B',
+    borderColor: theme.colors.accentStrong,
+    ...theme.glow,
   },
   labelTempo: {
     color: '#F7DCE5',
@@ -147,60 +123,8 @@ const styles = StyleSheet.create({
     lineHeight: 52,
     letterSpacing: 0.3,
   },
-  botaoDetalhes: {
-    marginTop: 16,
-    minHeight: 46,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#BDBDBD',
-    backgroundColor: '#EAEAEA',
-    paddingHorizontal: 14,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '90%',
-  },
-  textoBotaoDetalhes: {
-    color: '#2B2B2B',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
   botaoHome: {
     marginTop: 14,
-    minHeight: 60,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#A0A0A0',
-    backgroundColor: '#E8E8E8',
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-  },
-  textoBotaoHome: {
-    color: '#252525',
-    fontSize: 23,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  setaWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#D8CBD0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  setaAbsoluta: {
-    position: 'absolute',
-    right: 10,
-  },
-  textoSeta: {
-    color: '#7C2E4A',
-    fontSize: 20,
-    lineHeight: 20,
-    fontWeight: '700',
-    marginTop: -1,
+    minHeight: 52,
   },
 });

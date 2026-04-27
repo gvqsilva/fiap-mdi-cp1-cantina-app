@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Animated, LogBox, StyleSheet, Text, View } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Stack, Tabs, useRouter, useSegments } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CartProvider, useCart } from './cart-context';
+import { AuthProvider, useAuth } from './auth-context';
+import { theme } from './theme';
 
 if (__DEV__) {
   LogBox.ignoreLogs([
@@ -12,6 +14,49 @@ if (__DEV__) {
 }
 
 export default function Layout() {
+  return (
+    <AuthProvider>
+      <RootNavigator />
+    </AuthProvider>
+  );
+}
+
+function RootNavigator() {
+  const router = useRouter();
+  const segments = useSegments();
+  const { usuarioLogado, carregandoSessao } = useAuth();
+  const segmentoAtual = segments[0];
+  const estaEmAuth = segmentoAtual === 'login' || segmentoAtual === 'cadastro' || segmentoAtual === 'escolher-tipo';
+
+  useEffect(() => {
+    if (carregandoSessao) {
+      return;
+    }
+
+    if (!usuarioLogado && !estaEmAuth) {
+      router.replace('/login');
+      return;
+    }
+
+    if (usuarioLogado && estaEmAuth) {
+      router.replace('/home');
+    }
+  }, [carregandoSessao, estaEmAuth, router, usuarioLogado]);
+
+  if (carregandoSessao) {
+    return <View style={styles.container} />;
+  }
+
+    if (!usuarioLogado) {
+    return (
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="login" />
+        <Stack.Screen name="escolher-tipo" />
+        <Stack.Screen name="cadastro" />
+      </Stack>
+    );
+  }
+
   return (
     <CartProvider>
       <TabsLayout />
@@ -58,13 +103,15 @@ function TabsLayout() {
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
-          tabBarActiveTintColor: '#B03A5A',
-          tabBarInactiveTintColor: '#646464',
+          tabBarActiveTintColor: theme.colors.accent,
+          tabBarInactiveTintColor: '#858585',
           tabBarStyle: {
-            height: 56,
+            height: 64,
             borderTopWidth: 1,
-            borderTopColor: '#BDBDBD',
-            backgroundColor: '#F3F3F3',
+            borderTopColor: theme.colors.border,
+            backgroundColor: theme.colors.surface,
+            paddingBottom: 6,
+            paddingTop: 6,
           },
         }}
       >
@@ -78,12 +125,21 @@ function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="cardapio"
+          options={{
+            title: 'Cardápio',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? 'restaurant' : 'restaurant-outline'} size={22} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="carrinho"
           options={{
             title: 'Carrinho',
             tabBarBadge: totalItens > 0 ? String(totalItens) : undefined,
             tabBarBadgeStyle: {
-              backgroundColor: '#B03A5A',
+              backgroundColor: theme.colors.accent,
               color: '#FFFFFF',
               fontSize: 10,
               lineHeight: 12,
@@ -126,6 +182,20 @@ function TabsLayout() {
             tabBarStyle: { display: 'none' },
           }}
         />
+        <Tabs.Screen
+          name="login"
+          options={{
+            href: null,
+            tabBarStyle: { display: 'none' },
+          }}
+        />
+        <Tabs.Screen
+          name="cadastro"
+          options={{
+            href: null,
+            tabBarStyle: { display: 'none' },
+          }}
+        />
       </Tabs>
 
       <Animated.View pointerEvents="none" style={[styles.toastContainer, estiloToastAnimado]}>
@@ -146,6 +216,7 @@ function TabsLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
   toastContainer: {
     position: 'absolute',
@@ -154,17 +225,14 @@ const styles = StyleSheet.create({
     right: 12,
     minHeight: 64,
     borderRadius: 16,
-    backgroundColor: '#1C5A39',
+    backgroundColor: theme.colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#2F7C47',
+    borderColor: theme.colors.accent,
     paddingHorizontal: 12,
     paddingVertical: 10,
     zIndex: 40,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.24,
-    shadowRadius: 10,
-    elevation: 10,
+    ...theme.shadow,
+    ...theme.glow,
   },
   toastLinha: {
     flexDirection: 'row',
@@ -174,13 +242,13 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#2F7C47',
+    backgroundColor: theme.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
   },
   toastIcone: {
-    color: '#F6FFF8',
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
   },
@@ -188,12 +256,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   toastTitulo: {
-    color: '#F6FFF8',
+    color: theme.colors.text,
     fontSize: 15,
     fontWeight: '700',
   },
   toastTexto: {
-    color: '#EAF8EF',
+    color: theme.colors.textMuted,
     fontSize: 13,
     marginTop: 2,
     fontWeight: '600',

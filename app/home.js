@@ -1,318 +1,121 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCart } from './cart-context';
-
-const CATEGORIAS = ['Tudo', 'Salgado', 'Doce', 'Bebidas', 'Combos'];
-const IMAGEM_PERFIL = require('../assets/user.jpg');
-const IMAGEM_COXINHA = require('../assets/coxinha.jpg');
-const IMAGEM_PAO_QUEIJO = require('../assets/pao-queijo.jpg');
-const IMAGEM_BOLO = require('../assets/bolo.jpg');
-const IMAGEM_COCA = require('../assets/coca.jpg');
-const IMAGEM_COMBO1 = require('../assets/combo1.webp');
-const IMAGEM_COCAZ = require('../assets/coca-zero.webp');
-const IMAGEM_CROISSANTCHOCO = require('../assets/croissants-choco.jpg');
-const IMAGEM_CROISSANTFRANGO = require('../assets/croissants-frango.jpg');
-const IMAGEM_CROISSANTPQ = require('../assets/croissants-presunto_queijo.jpg');
-const IMAGEM_ESFIRRA = require('../assets/esfirra-carne.jpg');
-const IMAGEM_COOKIE = require('../assets/cookie.jpg');
-const IMAGEM_CAFEP = require('../assets/cafe-p.webp');
-const IMAGEM_CAFEM = require('../assets/cafe-m.jpg');
-const IMAGEM_AGUACOM = require('../assets/agua-com.webp');
-const IMAGEM_AGUA = require('../assets/agua.webp');
-
-
-const PRODUTOS = [
-  {
-    id: 1,
-    nome: 'Coxinha de frango',
-    descricao: '',
-    valor: 'R$ 10,00',
-    categoria: 'Salgado',
-    imagem: IMAGEM_COXINHA,
-  },
-  {
-    id: 2,
-    nome: 'Pão de queijo',
-    descricao: '',
-    valor: 'R$ 8,50',
-    categoria: 'Salgado',
-    imagem: IMAGEM_PAO_QUEIJO,
-  },
-  {
-    id: 3,
-    nome: 'Coca-Cola',
-    descricao: '350ml',
-    valor: 'R$ 6,00',
-    categoria: 'Bebidas',
-    imagem: IMAGEM_COCA,
-  },
-  {
-    id: 4,
-    nome: 'Bolo de Cenoura',
-    descricao: '',
-    valor: 'R$ 6,00',
-    categoria: 'Doce',
-    imagem: IMAGEM_BOLO,
-  },
-  {
-    id: 5,
-    nome: 'Água',
-    descricao: '500ml',
-    valor: 'R$ 4,50',
-    categoria: 'Bebidas',
-    imagem: IMAGEM_AGUA,
-  },
-  {
-    id: 6,
-    nome: 'Café Pequeno',
-    descricao: '50ml',
-    valor: 'R$ 4,00',
-    categoria: 'Bebidas',
-    imagem: IMAGEM_CAFEP,
-  },
-  {
-    id: 7,
-    nome: 'Pão de queijo + Café',
-    descricao: 'Combo de Pão de Queijo com Café Médio, 100ml',
-    valor: 'R$ 15,00',
-    categoria: 'Combos',
-    imagem: IMAGEM_COMBO1,
-  },
-  {
-    id: 8,
-    nome: 'Coca-Cola Zero',
-    descricao: '350ml',
-    valor: 'R$ 6,00',
-    categoria: 'Bebidas',
-    imagem: IMAGEM_COCAZ,
-  },
-  {
-    id: 9,
-    nome: 'Cookie',
-    descricao: '',
-    valor: 'R$ 7,50',
-    categoria: 'Doce',
-    imagem: IMAGEM_COOKIE,
-  },
-  {
-    id: 10,
-    nome: 'Café Médio',
-    descricao: '100ml',
-    valor: 'R$ 5,50',
-    categoria: 'Bebidas',
-    imagem: IMAGEM_CAFEM,
-  },
-  {
-    id: 11,
-    nome: 'Croissant de chocolate',
-    descricao: '',
-    valor: 'R$ 12,50',
-    categoria: 'Doce',
-    imagem: IMAGEM_CROISSANTCHOCO,
-  },
-  {
-    id: 12,
-    nome: 'Croissant de frango',
-    descricao: '',
-    valor: 'R$ 12,00',
-    categoria: 'Salgado',
-    imagem: IMAGEM_CROISSANTFRANGO,
-  },
-  {
-    id: 13,
-    nome: 'Água com gás',
-    descricao: '500ml',
-    valor: 'R$ 5,50',
-    categoria: 'Bebidas',
-    imagem: IMAGEM_AGUACOM,
-  },
-  {
-    id: 14,
-    nome: 'Croissant de presunto e queijo',
-    descricao: '',
-    valor: 'R$ 12,00',
-    categoria: 'Salgado',
-    imagem: IMAGEM_CROISSANTPQ,
-  },
-  {
-    id: 15,
-    nome: 'Esfirra de carne',
-    descricao: '',
-    valor: 'R$ 12,00',
-    categoria: 'Salgado',
-    imagem: IMAGEM_ESFIRRA,
-  },
-];
+import { useAuth } from './auth-context';
+import ThemedHeader from '../components/ThemedHeader';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenBackground from '../components/ScreenBackground';
+import FadeInView from '../components/FadeInView';
+import ScalePressable from '../components/ScalePressable';
+import { theme } from './theme';
+import { PRODUTOS_DESTAQUE } from './menu-data';
 
 export default function Home() {
   const router = useRouter();
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState('Tudo');
-  const [itensAdicionadosVisual, setItensAdicionadosVisual] = useState({});
-  const [mensagemToast, setMensagemToast] = useState('');
-  const timersFeedbackRef = useRef({});
-  const timerToastRef = useRef(null);
-  const animacaoToast = useRef(new Animated.Value(0)).current;
-  const { adicionarItem } = useCart();
-
-  const marcarItemAdicionado = useCallback((produtoId) => {
-    setItensAdicionadosVisual((estadoAtual) => ({ ...estadoAtual, [produtoId]: true }));
-
-    if (timersFeedbackRef.current[produtoId]) {
-      clearTimeout(timersFeedbackRef.current[produtoId]);
-    }
-
-    timersFeedbackRef.current[produtoId] = setTimeout(() => {
-      setItensAdicionadosVisual((estadoAtual) => {
-        const proximoEstado = { ...estadoAtual };
-        delete proximoEstado[produtoId];
-        return proximoEstado;
-      });
-
-      delete timersFeedbackRef.current[produtoId];
-    }, 900);
-  }, []);
-
-  const exibirToast = useCallback(
-    (nomeProduto) => {
-      setMensagemToast(`${nomeProduto} adicionado ao carrinho`);
-
-      if (timerToastRef.current) {
-        clearTimeout(timerToastRef.current);
-      }
-
-      Animated.timing(animacaoToast, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-
-      timerToastRef.current = setTimeout(() => {
-        Animated.timing(animacaoToast, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-      }, 1300);
-    },
-    [animacaoToast]
-  );
-
-  useEffect(() => {
-    return () => {
-      Object.values(timersFeedbackRef.current).forEach((timerId) => clearTimeout(timerId));
-      timersFeedbackRef.current = {};
-
-      if (timerToastRef.current) {
-        clearTimeout(timerToastRef.current);
-      }
-    };
-  }, []);
-
-  const estiloToastAnimado = {
-    opacity: animacaoToast,
-    transform: [
-      {
-        translateY: animacaoToast.interpolate({
-          inputRange: [0, 1],
-          outputRange: [16, 0],
-        }),
-      },
-    ],
-  };
-
-  const produtosFiltrados = useMemo(() => {
-    if (categoriaSelecionada === 'Tudo') {
-      return PRODUTOS;
-    }
-
-    return PRODUTOS.filter((produto) => produto.categoria === categoriaSelecionada);
-  }, [categoriaSelecionada]);
+  const { totalItens } = useCart();
+  const { usuarioLogado } = useAuth();
+  const destaques = PRODUTOS_DESTAQUE;
+  const primeiroNome = String(usuarioLogado?.nome || 'Usuário').split(' ')[0];
 
   return (
     <View style={styles.container}>
-      <View style={styles.topo}>
-        <View>
-          <Text style={styles.logo}>FiaPass</Text>
-          <Text style={styles.subtitulo}>FIAP x Kitchenette</Text>
-        </View>
+      <ScreenBackground />
+      <ThemedHeader
+        title="Home"
+        subtitle={`Seu pedido começa por aqui.`}
+      />
 
-        <TouchableOpacity style={styles.botaoPerfil} activeOpacity={0.85} onPress={() => router.push('/perfil')}>
-          <Image source={IMAGEM_PERFIL} style={styles.imagemPerfil} resizeMode="cover" />
-        </TouchableOpacity>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.conteudo}>
+        <FadeInView style={styles.heroCard}>
+          <View style={styles.heroLogoWrap}>
+            <Image source={require('../assets/fiap-logo.png')} style={styles.heroLogo} resizeMode="contain" />
+          </View>
 
-      <Text style={styles.tituloCardapio}>Cardápio</Text>
+          <View style={styles.heroGlow} />
+          <Text style={styles.heroTag}>Pedido rápido</Text>
+          <Text style={styles.heroTitulo}>Escolha, pague e acompanhe sem sair da tela</Text>
+          <Text style={styles.heroTexto}>
+            Monte seu pedido em poucos toques e acompanhe o preparo com um fluxo mais simples e direto.
+          </Text>
 
-      <ScrollView
-        horizontal
-        style={styles.categoriasScroll}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.listaCategorias}
-      >
-        {CATEGORIAS.map((categoria, index) => {
-          const ativo = categoriaSelecionada === categoria;
-          const ultimoItem = index === CATEGORIAS.length - 1;
-
-          return (
-            <TouchableOpacity
-              key={categoria}
-              style={[
-                styles.chipCategoria,
-                !ultimoItem && styles.chipCategoriaComEspaco,
-                ativo && styles.chipCategoriaAtivo,
-              ]}
-              onPress={() => setCategoriaSelecionada(categoria)}
-              activeOpacity={0.8}
-              hitSlop={{ top: 6, right: 6, bottom: 6, left: 6 }}
-            >
-              <Text style={[styles.textoChip, ativo && styles.textoChipAtivo]}>{categoria}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listaProdutos}>
-        {produtosFiltrados.map((produto) => {
-          const adicionadoAgora = Boolean(itensAdicionadosVisual[produto.id]);
-
-          return (
-          <View key={produto.id} style={[styles.cardProduto, adicionadoAgora && styles.cardProdutoAtivo]}>
-            <View style={styles.imagemPlaceholder}>
-              <Image source={produto.imagem} style={styles.imagemProduto} resizeMode="cover" />
+          <View style={styles.heroStats}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>No carrinho</Text>
+              <Text style={styles.statValue}>{totalItens}</Text>
             </View>
-
-            <View style={styles.infoProduto}>
-              <Text style={styles.nomeProduto}>{produto.nome}</Text>
-              <Text style={styles.descricaoProduto}>{produto.descricao}</Text>
-              <Text style={styles.valorProduto}>{produto.valor}</Text>
-              {adicionadoAgora && <Text style={styles.feedbackItem}>Adicionado ao carrinho</Text>}
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Atalho</Text>
+              <Text style={styles.statValue}>Cardápio</Text>
             </View>
+          </View>
 
+          <PrimaryButton
+            title="Ir para o cardápio"
+            onPress={() =>
+              router.push({
+                pathname: '/cardapio',
+                params: { entrada: 'cinema' },
+              })
+            }
+            style={styles.heroBotao}
+          />
+        </FadeInView>
+
+        <FadeInView style={styles.linhaAcoes} delay={70}>
+          <ScalePressable style={styles.atalhoCard} onPress={() => router.push('/carrinho')}>
+            <Text style={styles.atalhoLabel}>Acesso rápido</Text>
+            <Text style={styles.atalhoTitulo}>Carrinho</Text>
+            <Text style={styles.atalhoTexto}>Você tem {totalItens} item(ns)</Text>
+          </ScalePressable>
+
+          <ScalePressable style={styles.atalhoCard} onPress={() => router.push('/perfil')}>
+            <Text style={styles.atalhoLabel}>Acesso rápido</Text>
+            <Text style={styles.atalhoTitulo}>Perfil</Text>
+            <Text style={styles.atalhoTexto}>Veja seu histórico e fidelidade</Text>
+          </ScalePressable>
+        </FadeInView>
+
+        <FadeInView style={styles.secao} delay={120}>
+          <View style={styles.secaoCabecalho}>
+            <View>
+              <Text style={styles.secaoTitulo}>Destaques do dia</Text>
+              <Text style={styles.secaoSubtitulo}>Sugestões para começar mais rápido</Text>
+            </View>
             <TouchableOpacity
-              style={[styles.botaoAdicionar, adicionadoAgora && styles.botaoAdicionarAtivo]}
-              activeOpacity={0.8}
-              onPress={() => {
-                adicionarItem(produto);
-                marcarItemAdicionado(produto.id);
-                exibirToast(produto.nome);
-              }}
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: '/cardapio',
+                  params: { filtro: 'destaques', entrada: 'cinema' },
+                })
+              }
             >
-              <Text style={styles.textoAdicionar}>{adicionadoAgora ? '✓' : '+'}</Text>
+              <Text style={styles.verTudo}>Ver tudo</Text>
             </TouchableOpacity>
           </View>
-          );
-        })}
-      </ScrollView>
 
-      <Animated.View pointerEvents="none" style={[styles.toastContainer, estiloToastAnimado]}>
-        <View style={styles.toastLinha}>
-          <View style={styles.toastIconeWrap}>
-            <Text style={styles.toastIcone}>✓</Text>
-          </View>
-          <Text style={styles.toastTexto}>{mensagemToast}</Text>
-        </View>
-      </Animated.View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.listaDestaques}>
+            {destaques.map((item) => (
+              <ScalePressable
+                key={item.id}
+                style={styles.cardDestaque}
+                onPress={() =>
+                  router.push({
+                    pathname: '/cardapio',
+                    params: { filtro: 'destaques', entrada: 'cinema' },
+                  })
+                }
+              >
+                <Image source={item.imagem} style={styles.imagemDestaque} resizeMode="cover" />
+                <Text style={styles.nomeDestaque} numberOfLines={2}>
+                  {item.nome}
+                </Text>
+                <Text style={styles.valorDestaque}>{item.valor}</Text>
+              </ScalePressable>
+            ))}
+          </ScrollView>
+        </FadeInView>
+      </ScrollView>
     </View>
   );
 }
@@ -320,217 +123,209 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#BBBBBB',
+    backgroundColor: theme.colors.background,
   },
-  topo: {
-    backgroundColor: '#AD395A',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    paddingTop: 18,
-    paddingHorizontal: 14,
-    paddingBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  conteudo: {
+    paddingHorizontal: 10,
+    paddingTop: 12,
+    paddingBottom: 26,
+    gap: 14,
   },
-  logo: {
-    color: '#FFFFFF',
-    fontSize: 38,
-    fontWeight: '700',
-    lineHeight: 40,
-    letterSpacing: 0.2,
-  },
-  subtitulo: {
-    marginTop: 1,
-    color: '#F9E5EC',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  botaoPerfil: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#E4E4E4',
+  headerBadge: {
+    minHeight: 28,
+    paddingHorizontal: 10,
+    borderRadius: theme.radius.pill,
+    backgroundColor: '#20161B',
     borderWidth: 1,
-    borderColor: '#D4D4D4',
-    overflow: 'hidden',
-    alignItems: 'center',
+    borderColor: theme.colors.border,
     justifyContent: 'center',
   },
-  imagemPerfil: {
-    width: '100%',
-    height: '100%',
-  },
-  tituloCardapio: {
-    marginTop: 12,
-    marginHorizontal: 12,
-    marginBottom: 4,
-    color: '#434343',
-    fontSize: 36,
-    fontWeight: '700',
-  },
-  categoriasScroll: {
-    flexGrow: 0,
-    maxHeight: 48,
-    marginTop: 0,
-  },
-  listaCategorias: {
-    paddingHorizontal: 8,
-    paddingBottom: 6,
-    paddingRight: 8,
-  },
-  chipCategoria: {
-    marginTop: 4,
-    backgroundColor: '#EAEAEA',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#CECECE',
-    width: 92,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipCategoriaComEspaco: {
-    marginRight: 7,
-  },
-  chipCategoriaAtivo: {
-    backgroundColor: '#B03A5A',
-    borderColor: '#B03A5A',
-  },
-  textoChip: {
-    color: '#3B3B3B',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  textoChipAtivo: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  listaProdutos: {
-    paddingHorizontal: 8,
-    paddingTop: 4,
-    paddingBottom: 18,
-    gap: 10,
-  },
-  cardProduto: {
-    backgroundColor: '#EBEBEB',
-    minHeight: 96,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#929292',
-    padding: 9,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cardProdutoAtivo: {
-    borderColor: '#4B8941',
-    backgroundColor: '#E6F3E3',
-  },
-  imagemPlaceholder: {
-    width: 76,
-    height: 76,
-    borderRadius: 14,
-    backgroundColor: '#3A3A3A',
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imagemProduto: {
-    width: '100%',
-    height: '100%',
-  },
-  infoProduto: {
-    flex: 1,
-    marginLeft: 12,
-    marginRight: 8,
-  },
-  nomeProduto: {
-    color: '#1E1E1E',
-    fontSize: 22,
-    lineHeight: 24,
-    fontWeight: '700',
-  },
-  descricaoProduto: {
-    color: '#4B4B4B',
-    fontSize: 14,
-    marginTop: 2,
-    lineHeight: 17,
-  },
-  valorProduto: {
-    color: '#2A2A2A',
-    fontSize: 16,
-    marginTop: 4,
-    lineHeight: 18,
-    fontWeight: '700',
-  },
-  feedbackItem: {
-    marginTop: 3,
-    color: '#2F7C47',
+  headerBadgeTexto: {
+    color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
   },
-  botaoAdicionar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#55983E',
-    borderWidth: 1,
-    borderColor: '#4F833D',
-    alignItems: 'center',
-    justifyContent: 'center',
+  infoAluno: {
+    alignItems: 'flex-end',
   },
-  botaoAdicionarAtivo: {
-    backgroundColor: '#2F7C47',
-    borderColor: '#2B6D3F',
-  },
-  textoAdicionar: {
-    color: '#FFFFFF',
-    fontSize: 20,
+  textoAluno: {
+    color: theme.colors.accentSoft,
+    fontSize: 18,
     fontWeight: '700',
-    marginTop: -1,
+    lineHeight: 20,
   },
-  toastContainer: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 22,
-    minHeight: 50,
-    borderRadius: 16,
-    backgroundColor: '#1F5C3A',
-    borderWidth: 1,
-    borderColor: '#2B7A4C',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    zIndex: 6,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.24,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  toastLinha: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  toastIconeWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#2D8755',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 9,
-  },
-  toastIcone: {
-    color: '#F2FFF6',
+  textoTurma: {
+    marginTop: 2,
+    color: theme.colors.textMuted,
     fontSize: 13,
+    fontWeight: '700',
+  },
+  heroCard: {
+    borderRadius: 22,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 14,
+    overflow: 'hidden',
+    ...theme.shadow,
+  },
+  heroGlow: {
+    position: 'absolute',
+    right: -20,
+    top: -40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(173, 57, 90, 0.18)',
+  },
+  heroLogoWrap: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  heroLogo: {
+    width: 96,
+    height: 96,
+  },
+  heroTag: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: theme.radius.pill,
+    backgroundColor: '#2A1017',
+    color: theme.colors.accentSoft,
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  heroTitulo: {
+    color: theme.colors.text,
+    fontSize: 26,
+    lineHeight: 30,
     fontWeight: '800',
   },
-  toastTexto: {
-    color: '#F6FFF8',
-    fontSize: 14,
-    fontWeight: '700',
+  heroTexto: {
+    marginTop: 6,
+    color: theme.colors.textMuted,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  heroStats: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 14,
+  },
+  statCard: {
     flex: 1,
+    minHeight: 74,
+    borderRadius: 16,
+    padding: 12,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  statLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  statValue: {
+    color: theme.colors.text,
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  heroBotao: {
+    marginTop: 12,
+  },
+  linhaAcoes: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  atalhoCard: {
+    flex: 1,
+    minHeight: 106,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceAlt,
+    padding: 12,
+    justifyContent: 'space-between',
+    ...theme.shadow,
+  },
+  atalhoLabel: {
+    color: theme.colors.accentSoft,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  atalhoTitulo: {
+    color: theme.colors.text,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  atalhoTexto: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  secao: {
+    marginTop: 4,
+  },
+  secaoCabecalho: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    gap: 12,
+  },
+  secaoTitulo: {
+    color: theme.colors.text,
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  secaoSubtitulo: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  verTudo: {
+    color: theme.colors.accentSoft,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  listaDestaques: {
+    paddingRight: 8,
+  },
+  cardDestaque: {
+    width: 170,
+    marginRight: 10,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#332B31',
+    backgroundColor: theme.colors.surface,
+    ...theme.shadow,
+  },
+  imagemDestaque: {
+    width: '100%',
+    height: 112,
+  },
+  nomeDestaque: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 20,
+    paddingHorizontal: 10,
+    paddingTop: 9,
+    minHeight: 56,
+  },
+  valorDestaque: {
+    color: theme.colors.accentSoft,
+    fontSize: 15,
+    fontWeight: '700',
+    paddingHorizontal: 10,
+    paddingBottom: 10,
   },
 });

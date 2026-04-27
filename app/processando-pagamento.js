@@ -3,6 +3,10 @@ import { View, Text, StyleSheet, ActivityIndicator, Animated, Easing } from 'rea
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { useCart } from './cart-context';
+import { useAuth } from './auth-context';
+import ScreenBackground from '../components/ScreenBackground';
+import FadeInView from '../components/FadeInView';
+import { theme } from './theme';
 
 const DURACAO_PROCESSAMENTO_MS = 2800;
 const TEMPO_POR_CATEGORIA = {
@@ -35,7 +39,8 @@ function calcularTempoEstimado(itensPedido) {
 export default function ProcessandoPagamento() {
   const router = useRouter();
   const isFocused = useIsFocused();
-  const { flowId } = useLocalSearchParams();
+  const { flowId, cupom, desconto, totalFinal } = useLocalSearchParams();
+  const { usuarioLogado } = useAuth();
   const { limparCarrinho, registrarPedido, itens } = useCart();
   const progresso = useRef(new Animated.Value(0)).current;
   const itensRef = useRef(itens);
@@ -77,8 +82,17 @@ export default function ProcessandoPagamento() {
     }, 420);
 
     const temporizador = setTimeout(() => {
-      const tempoEstimado = calcularTempoEstimado(itensRef.current);
-      registrarPedido(idPedido, itensRef.current, tempoEstimado);
+      const tempoBase = calcularTempoEstimado(itensRef.current);
+      const ehProfessor = usuarioLogado?.papel === 'professor';
+      const tempoEstimado = ehProfessor ? Math.max(1, Math.ceil(tempoBase * 0.7)) : tempoBase;
+      const descontoAplicado = Number(desconto || 0);
+      const totalPedidoFinal = Number(totalFinal || 0);
+      registrarPedido(idPedido, itensRef.current, tempoEstimado, {
+        cupom: typeof cupom === 'string' ? cupom : '',
+        descontoOrigem: Number(descontoAplicado) > 0 ? 'fidelidade' : '',
+        descontoAplicado: Number.isFinite(descontoAplicado) ? descontoAplicado : 0,
+        totalPedidoFinal: Number.isFinite(totalPedidoFinal) && totalPedidoFinal > 0 ? totalPedidoFinal : undefined,
+      });
       limparCarrinho();
       router.replace({
         pathname: '/pedido',
@@ -91,7 +105,7 @@ export default function ProcessandoPagamento() {
       clearInterval(animacaoPontos);
       progresso.stopAnimation();
     };
-  }, [flowId, idPedido, isFocused, limparCarrinho, progresso, registrarPedido, router]);
+  }, [flowId, idPedido, isFocused, limparCarrinho, progresso, registrarPedido, router, usuarioLogado?.papel]);
 
   const larguraProgresso = progresso.interpolate({
     inputRange: [0, 1],
@@ -100,8 +114,9 @@ export default function ProcessandoPagamento() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
-        <ActivityIndicator size="large" color="#B03A5A" />
+      <ScreenBackground />
+      <FadeInView style={styles.card}>
+        <ActivityIndicator size="large" color={theme.colors.accent} />
         <Text style={styles.titulo}>{`Processando pagamento${sufixoLoading}`}</Text>
         <Text style={styles.subtitulo}>Estamos confirmando sua compra</Text>
 
@@ -110,7 +125,7 @@ export default function ProcessandoPagamento() {
         </View>
 
         <Text style={styles.tempoTexto}>Isso leva cerca de 3 segundos</Text>
-      </View>
+      </FadeInView>
     </View>
   );
 }
@@ -118,33 +133,34 @@ export default function ProcessandoPagamento() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#A5A5A5',
+    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
   },
   card: {
-    width: '98%',
+    width: '97%',
     minHeight: 300,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#8A8A8A',
-    backgroundColor: '#E1E1E1',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 40,
     paddingHorizontal: 20,
+    ...theme.shadow,
   },
   titulo: {
     marginTop: 16,
-    color: '#2A2A2A',
+    color: theme.colors.text,
     fontSize: 26,
     fontWeight: '700',
     textAlign: 'center',
   },
   subtitulo: {
     marginTop: 8,
-    color: '#505050',
+    color: theme.colors.textMuted,
     fontSize: 17,
     textAlign: 'center',
   },
@@ -153,19 +169,19 @@ const styles = StyleSheet.create({
     width: '92%',
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#CFCFCF',
+    backgroundColor: '#0D0D0D',
     borderWidth: 1,
-    borderColor: '#B4B4B4',
+    borderColor: theme.colors.border,
     overflow: 'hidden',
   },
   progressoPreenchimento: {
     height: '100%',
     borderRadius: 7,
-    backgroundColor: '#B03A5A',
+    backgroundColor: theme.colors.accent,
   },
   tempoTexto: {
     marginTop: 12,
-    color: '#5C5C5C',
+    color: theme.colors.textMuted,
     fontSize: 14,
     fontWeight: '500',
   },

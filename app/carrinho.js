@@ -2,6 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Animated, Vibration } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCart } from './cart-context';
+import ThemedHeader from '../components/ThemedHeader';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenBackground from '../components/ScreenBackground';
+import FadeInView from '../components/FadeInView';
+import { theme } from './theme';
 
 const IMAGEM_PADRAO = require('../assets/splash-icon.png');
 
@@ -76,10 +81,8 @@ export default function Carrinho() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topo}>
-        <Text style={styles.titulo}>Carrinho</Text>
-        <Text style={styles.subtitulo}>Verifique seu pedido antes de finalizar a compra</Text>
-      </View>
+      <ScreenBackground />
+      <ThemedHeader title="Carrinho" subtitle="Verifique seu pedido antes de finalizar a compra" />
 
       <Animated.View pointerEvents="none" style={[styles.feedbackRemocao, estiloFeedbackAnimado]}>
         <View style={styles.feedbackLinha}>
@@ -91,12 +94,13 @@ export default function Carrinho() {
       </Animated.View>
 
       {carrinhoVazio ? (
-        <View style={styles.estadoVazio}>
+        <FadeInView style={styles.estadoVazio} delay={70}>
           <Text style={styles.tituloVazio}>Seu carrinho esta vazio</Text>
           <Text style={styles.subtituloVazio}>Adicione produtos no cardapio para continuar.</Text>
-        </View>
+        </FadeInView>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listaItens}>
+        <FadeInView style={styles.listaItensWrap} delay={70}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listaItens}>
           {itens.map((item) => (
             <View key={item.id} style={styles.cardItem}>
               <View style={styles.imagemWrapper}>
@@ -130,19 +134,13 @@ export default function Carrinho() {
               </View>
             </View>
           ))}
-        </ScrollView>
+          </ScrollView>
+        </FadeInView>
       )}
 
-      <View style={styles.rodapeAcao}>
-        <TouchableOpacity
-          style={[styles.botaoPagamento, carrinhoVazio && styles.botaoPagamentoDesabilitado]}
-          activeOpacity={0.85}
-          disabled={carrinhoVazio}
-          onPress={() => router.push('/pagamento')}
-        >
-          <Text style={styles.botaoPagamentoTexto}>Ir para pagamento</Text>
-        </TouchableOpacity>
-      </View>
+      <FadeInView style={styles.rodapeAcao} delay={120}>
+        <PrimaryButton title="Ir para pagamento" disabled={carrinhoVazio} onPress={() => router.push('/pagamento')} />
+      </FadeInView>
     </View>
   );
 }
@@ -150,49 +148,23 @@ export default function Carrinho() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#B8B8B8',
-  },
-  topo: {
-    backgroundColor: '#AD395A',
-    borderBottomLeftRadius: 26,
-    borderBottomRightRadius: 26,
-    paddingTop: 16,
-    paddingHorizontal: 12,
-    paddingBottom: 14,
-  },
-  titulo: {
-    color: '#FFFFFF',
-    fontSize: 38,
-    fontWeight: '700',
-    lineHeight: 40,
-    letterSpacing: 0.2,
-  },
-  subtitulo: {
-    color: '#FFF1F5',
-    fontSize: 16,
-    lineHeight: 21,
-    marginTop: 5,
-    fontWeight: '500',
+    backgroundColor: theme.colors.background,
   },
   feedbackRemocao: {
     position: 'absolute',
-    top: 96,
+    top: 102,
     left: 14,
     right: 14,
     minHeight: 48,
     borderRadius: 16,
-    backgroundColor: '#7A1D32',
+    backgroundColor: theme.colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#B03A5A',
+    borderColor: theme.colors.accent,
     justifyContent: 'center',
     paddingHorizontal: 12,
     paddingVertical: 7,
     zIndex: 4,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
+    ...theme.shadow,
   },
   feedbackLinha: {
     flexDirection: 'row',
@@ -202,7 +174,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#B03A5A',
+    backgroundColor: theme.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 9,
@@ -213,16 +185,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   feedbackRemocaoTexto: {
-    color: '#FFF2F6',
+    color: theme.colors.text,
     fontSize: 14,
     lineHeight: 19,
     fontWeight: '700',
     flex: 1,
   },
+  listaItensWrap: {
+    flex: 1,
+  },
   listaItens: {
-    paddingHorizontal: 8,
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingHorizontal: 10,
+    paddingTop: 26,
+    paddingBottom: 12,
     gap: 10,
   },
   estadoVazio: {
@@ -232,37 +207,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
   },
   tituloVazio: {
-    color: '#FFFFFF',
+    color: theme.colors.text,
     fontSize: 24,
     fontWeight: '700',
     textAlign: 'center',
   },
   subtituloVazio: {
     marginTop: 10,
-    color: '#F2F2F2',
+    color: theme.colors.textMuted,
     fontSize: 16,
     lineHeight: 22,
     textAlign: 'center',
   },
   cardItem: {
-    backgroundColor: '#E9E9E9',
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: '#9A9A9A',
+    borderColor: theme.colors.border,
     borderRadius: 18,
     minHeight: 98,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 10,
+    ...theme.shadow,
   },
   imagemWrapper: {
     width: 74,
     height: 74,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#3A3A3A',
+    backgroundColor: '#090909',
     borderWidth: 1,
-    borderColor: '#2F2F2F',
+    borderColor: '#242424',
   },
   imagemProduto: {
     width: '100%',
@@ -274,19 +250,19 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   nomeItem: {
-    color: '#1F1F1F',
+    color: theme.colors.text,
     fontSize: 22,
     lineHeight: 24,
     fontWeight: '700',
   },
   descricaoItem: {
-    color: '#505050',
+    color: theme.colors.textMuted,
     fontSize: 13,
     lineHeight: 16,
     marginTop: 2,
   },
   valorItem: {
-    color: '#2B2B2B',
+    color: theme.colors.accentSoft,
     fontSize: 16,
     lineHeight: 18,
     marginTop: 5,
@@ -307,15 +283,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   botaoDiminuir: {
-    backgroundColor: '#B34747',
-    borderColor: '#933D3D',
+    backgroundColor: '#722537',
+    borderColor: '#8E2A44',
   },
   botaoAumentar: {
-    backgroundColor: '#55983E',
-    borderColor: '#4B8438',
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accentStrong,
   },
   quantidadeTexto: {
-    color: '#1A1A1A',
+    color: theme.colors.text,
     fontSize: 23,
     lineHeight: 24,
     fontWeight: '700',
@@ -331,28 +307,8 @@ const styles = StyleSheet.create({
   },
   rodapeAcao: {
     marginTop: 'auto',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingBottom: 14,
     paddingTop: 4,
-  },
-  botaoPagamento: {
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#B03A5A',
-    borderWidth: 1,
-    borderColor: '#9C3050',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  botaoPagamentoDesabilitado: {
-    backgroundColor: '#8C6A75',
-    borderColor: '#7A5A64',
-  },
-  botaoPagamentoTexto: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    lineHeight: 26,
-    fontWeight: '700',
-    letterSpacing: 0.2,
   },
 });

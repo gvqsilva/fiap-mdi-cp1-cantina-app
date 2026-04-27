@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCart } from './cart-context';
+import { useAuth } from './auth-context';
+import ThemedHeader from '../components/ThemedHeader';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenBackground from '../components/ScreenBackground';
+import FadeInView from '../components/FadeInView';
+import { theme } from './theme';
 
 const IMAGEM_PADRAO = require('../assets/splash-icon.png');
 const OPCOES_PAGAMENTO = ['Débito', 'Crédito', 'Vale Refeição', 'Pix'];
+const HORA_ABERTURA = 7;
+const HORA_FECHAMENTO = 21;
 
 function valorParaNumero(valor) {
   if (typeof valor !== 'string') {
@@ -23,25 +31,37 @@ function valorParaNumero(valor) {
 
 export default function Pagamento() {
   const router = useRouter();
-  const { itens, totalItens } = useCart();
+  const { itens, totalItens, historicoPedidos } = useCart();
+  const { usuarioLogado } = useAuth();
   const [opcaoSelecionada, setOpcaoSelecionada] = useState(null);
-  const podeFinalizar = Boolean(opcaoSelecionada) && totalItens > 0;
 
   const subtotal = itens.reduce((acumulado, item) => {
     return acumulado + valorParaNumero(item.valor) * item.quantidade;
   }, 0);
 
-  const total = subtotal;
+  const agora = new Date();
+  const horaAtual = agora.getHours();
+  const dentroHorario = horaAtual >= HORA_ABERTURA && horaAtual < HORA_FECHAMENTO;
+
+  const ehProfessor = usuarioLogado?.papel === 'professor';
+  const pedidosParaDesconto = ehProfessor ? 5 : 10;
+
+  const pedidosConcluidos = historicoPedidos.filter((pedido) => pedido.status === 'Concluído').length;
+  const progressoFidelidade = pedidosConcluidos % pedidosParaDesconto;
+  const vaiGanharFidelidade = progressoFidelidade === pedidosParaDesconto - 1;
+  const descontoFidelidade = vaiGanharFidelidade ? subtotal * 0.1 : 0;
+
+  const descontoTotal = Math.min(subtotal * 0.5, descontoFidelidade);
+  const total = Math.max(0, subtotal - descontoTotal);
+  const podeFinalizar = Boolean(opcaoSelecionada) && totalItens > 0 && dentroHorario;
 
   return (
     <View style={styles.container}>
-      <View style={styles.topo}>
-        <Text style={styles.titulo}>Pagamento</Text>
-        <Text style={styles.subtitulo}>Confira os dados antes de concluir</Text>
-      </View>
+      <ScreenBackground />
+      <ThemedHeader title="Pagamento" subtitle="Confira os dados antes de concluir" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.conteudo}>
-        <View style={styles.blocoResumo}>
+        <FadeInView style={styles.blocoResumo}>
           <Text style={styles.resumoTitulo}>Resumo do pedido</Text>
 
           <View style={styles.listaProdutos}>
@@ -71,13 +91,31 @@ export default function Pagamento() {
             <Text style={styles.valorResumo}>{`R$ ${subtotal.toFixed(2).replace('.', ',')}`}</Text>
           </View>
 
+          <View style={styles.linhaResumo}>
+            <Text style={styles.labelResumo}>Descontos</Text>
+            <Text style={styles.valorResumo}>{`- R$ ${descontoTotal.toFixed(2).replace('.', ',')}`}</Text>
+          </View>
+
           <View style={[styles.linhaResumo, styles.linhaTotal]}>
             <Text style={styles.labelTotal}>Total</Text>
             <Text style={styles.valorTotal}>{`R$ ${total.toFixed(2).replace('.', ',')}`}</Text>
           </View>
-        </View>
 
-        <View style={styles.blocoPagamento}>
+          <Text style={styles.textoFidelidade}>{`Fidelidade automática: ${progressoFidelidade}/${pedidosParaDesconto} pedidos concluídos`}</Text>
+          {vaiGanharFidelidade ? (
+            <Text style={styles.alertaFidelidade}>
+              {`Você já está com direito ao desconto de 10% no próximo pedido.`}
+            </Text>
+          ) : (
+            <Text style={styles.alertaFidelidade}>
+              {ehProfessor
+                ? 'Professor: 10% a cada 5 pedidos concluídos.'
+                : 'Aluno: 10% a cada 10 pedidos concluídos.'}
+            </Text>
+          )}
+        </FadeInView>
+
+        <FadeInView style={styles.blocoPagamento} delay={80}>
           <Text style={styles.tituloPagamento}>Formas de pagamento</Text>
 
           {OPCOES_PAGAMENTO.map((opcao) => {
@@ -94,17 +132,18 @@ export default function Pagamento() {
               </TouchableOpacity>
             );
           })}
-        </View>
+
+          {!dentroHorario ? (
+            <Text style={styles.erroCupom}>{`Pedidos disponíveis somente das ${HORA_ABERTURA}h às ${HORA_FECHAMENTO}h`}</Text>
+          ) : null}
+        </FadeInView>
       </ScrollView>
 
-      <View style={styles.rodapeAcoes}>
-        <TouchableOpacity style={styles.botaoSecundario} onPress={() => router.back()} activeOpacity={0.85}>
-          <Text style={styles.textoBotaoSecundario}>Voltar</Text>
-        </TouchableOpacity>
+      <FadeInView style={styles.rodapeAcoes} delay={120}>
+        <PrimaryButton title="Voltar" variant="secondary" onPress={() => router.back()} />
 
-        <TouchableOpacity
-          style={[styles.botaoPrincipal, !podeFinalizar && styles.botaoPrincipalDesabilitado]}
-          activeOpacity={0.85}
+        <PrimaryButton
+          title="Finalizar pagamento"
           disabled={!podeFinalizar}
           onPress={() =>
             router.push({
@@ -112,13 +151,13 @@ export default function Pagamento() {
               params: {
                 formaPagamento: opcaoSelecionada,
                 flowId: String(Date.now()),
+                desconto: descontoTotal.toFixed(2),
+                totalFinal: total.toFixed(2),
               },
             })
           }
-        >
-          <Text style={styles.textoBotaoPrincipal}>Finalizar pagamento</Text>
-        </TouchableOpacity>
-      </View>
+        />
+      </FadeInView>
     </View>
   );
 }
@@ -126,51 +165,34 @@ export default function Pagamento() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#A5A5A5',
-  },
-  topo: {
-    backgroundColor: '#AD395A',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    paddingTop: 12,
-    paddingHorizontal: 10,
-    paddingBottom: 12,
-  },
-  titulo: {
-    color: '#FFFFFF',
-    fontSize: 36,
-    fontWeight: '700',
-    lineHeight: 38,
-  },
-  subtitulo: {
-    color: '#FFF1F5',
-    fontSize: 16,
-    marginTop: 4,
+    backgroundColor: theme.colors.background,
   },
   conteudo: {
     paddingBottom: 10,
   },
   blocoResumo: {
     marginTop: 16,
-    marginHorizontal: 8,
+    marginHorizontal: 10,
     borderRadius: 18,
-    backgroundColor: '#E6E6E6',
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: '#8A8A8A',
+    borderColor: theme.colors.border,
     padding: 12,
+    ...theme.shadow,
   },
   blocoPagamento: {
     marginTop: 10,
-    marginHorizontal: 8,
+    marginHorizontal: 10,
     marginBottom: 6,
     borderRadius: 16,
-    backgroundColor: '#B8B8B8',
+    backgroundColor: theme.colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#8E8E8E',
+    borderColor: theme.colors.border,
     padding: 10,
+    ...theme.shadow,
   },
   tituloPagamento: {
-    color: '#2C2C2C',
+    color: theme.colors.text,
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 10,
@@ -179,18 +201,19 @@ const styles = StyleSheet.create({
     minHeight: 42,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#C8C8C8',
-    backgroundColor: '#ECECEC',
+    borderColor: theme.colors.border,
+    backgroundColor: '#0E0E0E',
     justifyContent: 'center',
     paddingHorizontal: 14,
     marginBottom: 8,
   },
   botaoOpcaoAtiva: {
-    backgroundColor: '#B03A5A',
-    borderColor: '#B03A5A',
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accentStrong,
+    ...theme.glow,
   },
   textoOpcao: {
-    color: '#2E2E2E',
+    color: theme.colors.textMuted,
     fontSize: 18,
     fontWeight: '600',
   },
@@ -198,8 +221,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
   },
+  erroCupom: {
+    color: '#FF7D7D',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
   resumoTitulo: {
-    color: '#252525',
+    color: theme.colors.text,
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 10,
@@ -211,18 +240,20 @@ const styles = StyleSheet.create({
   itemProduto: {
     minHeight: 52,
     borderRadius: 12,
-    backgroundColor: '#D1D1D1',
+    backgroundColor: '#0D0D0D',
     paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#202020',
   },
   imagemItemWrap: {
     width: 40,
     height: 40,
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#3A3A3A',
+    backgroundColor: '#050505',
   },
   imagemItem: {
     width: '100%',
@@ -234,17 +265,17 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   nomeProduto: {
-    color: '#2A2A2A',
+    color: theme.colors.text,
     fontSize: 15,
     fontWeight: '600',
   },
   valorProduto: {
-    color: '#3E3E3E',
+    color: theme.colors.textMuted,
     fontSize: 13,
     marginTop: -1,
   },
   quantidadeProduto: {
-    color: '#2A2A2A',
+    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '700',
     minWidth: 16,
@@ -258,63 +289,46 @@ const styles = StyleSheet.create({
   },
   linhaTotal: {
     borderTopWidth: 1,
-    borderTopColor: '#BEBEBE',
+    borderTopColor: theme.colors.border,
     marginTop: 4,
     paddingTop: 10,
     marginBottom: 0,
   },
   labelResumo: {
-    color: '#424242',
+    color: theme.colors.textMuted,
     fontSize: 16,
   },
   valorResumo: {
-    color: '#1F1F1F',
+    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '600',
   },
   labelTotal: {
-    color: '#171717',
+    color: theme.colors.accentSoft,
     fontSize: 20,
     fontWeight: '700',
   },
   valorTotal: {
-    color: '#171717',
+    color: theme.colors.accentSoft,
     fontSize: 20,
+    fontWeight: '700',
+  },
+  textoFidelidade: {
+    marginTop: 8,
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  alertaFidelidade: {
+    marginTop: 4,
+    color: '#8BE2AE',
+    fontSize: 13,
     fontWeight: '700',
   },
   rodapeAcoes: {
     marginTop: 'auto',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingBottom: 16,
     gap: 8,
-  },
-  botaoSecundario: {
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1,
-    borderColor: '#B03A5A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EAD2DA',
-  },
-  textoBotaoSecundario: {
-    color: '#6B2940',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  botaoPrincipal: {
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#B03A5A',
-  },
-  botaoPrincipalDesabilitado: {
-    backgroundColor: '#8B6B74',
-  },
-  textoBotaoPrincipal: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
   },
 });
