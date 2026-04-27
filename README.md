@@ -262,6 +262,18 @@ components/
 
 ## Diferenciais Implementados (A+)
 
+### Sistema de Aluno e Professor
+- **Desafio resolvido**: adaptar o app para dois perfis de usuário com regras diferentes
+- **Implementação**:
+  - Seleção de papel antes do cadastro (Aluno ou Professor)
+  - Cadastro com campos específicos para cada perfil
+  - Fidelidade adaptada ao tipo de usuário:
+    - **Aluno**: 10 pedidos para ganhar 10% de desconto
+    - **Professor**: 5 pedidos para ganhar 10% de desconto
+  - Vantagem exclusiva para professor com 30% de redução no tempo de preparo
+  - Exibição das informações e benefícios corretos no perfil
+- **Resultado**: o app fica mais inteligente, personalizado e com regras de negócio mais próximas de um cenário real
+
 ### 1. Sistema Multi-Papel com Lógicas Diferentes
 - **Desafio resolvido**: Permitir dois tipos de usuários com fluxos e benefícios distintos
 - **Implementação**:
